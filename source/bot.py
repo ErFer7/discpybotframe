@@ -18,13 +18,6 @@ import discord
 
 from discord.ext import commands
 
-from Source.meeting_management_cog import Meeting
-from Source.admin_cog import AdminCog
-from Source.help_cog import HelpCog
-from Source.settings_cog import SettingsCog
-from Source.event_cog import EventCog
-from Source.meeting_management_cog import MeetingManagementCog
-
 
 class CustomBot(commands.Bot):
 
@@ -101,7 +94,7 @@ class CustomBot(commands.Bot):
         else:
             await self.change_presence(activity=discord.Game(name=self._activity_str))
 
-    # Métodos -----------------------------------------------------------------
+    # Métodos
     def load_internal_settings(self, file_name: str) -> dict:
         '''
         Carrega as configurações internas.
@@ -188,21 +181,6 @@ class CustomBot(commands.Bot):
         return self._guilds[str(guild_id)]
 
 
-class CustomUser():
-
-    '''
-    Definição de um usuário.
-    '''
-
-    _user: discord.User
-    _identification: int
-    _bot: CustomBot
-    _settings: dict
-
-    def __init__(self) -> None:
-        pass
-
-
 class CustomGuild():
 
     '''
@@ -249,11 +227,6 @@ class CustomGuild():
         '''
         Escreve as configurações do servidor.
         '''
-
-        self._settings["Meetings"].clear()
-
-        for meeting_name, meeting in self.__meetings.items():
-            self._settings["Meetings"][meeting_name] = meeting.get_topics()
 
         with open(os.path.join("Guilds", f"{self._identification}.json"), 'w+', encoding="utf-8") as settings_file:
 
@@ -304,31 +277,3 @@ class CustomGuild():
 
         print(f"[{datetime.now()}][System]: The main voice channel of the guild "
               f"{self._identification} has been updated")
-
-    def add_meeting(self, name: str, meeting: Meeting) -> None:
-        '''
-        Adiciona uma reunião.
-        '''
-
-        self.__meetings[name] = meeting
-
-    def remove_meeting(self, name: str) -> None:
-        '''
-        Remove uma reunião.
-        '''
-
-        del self.__meetings[name]
-
-    def get_meeting(self, name: str) -> Meeting:
-        '''
-        Retorna uma reunião.
-        '''
-
-        return self.__meetings[name]
-
-    def meeting_exist(self, name: str) -> bool:
-        '''
-        Retorna verdadeiro se a reunião existir.
-        '''
-
-        return name in self.__meetings
