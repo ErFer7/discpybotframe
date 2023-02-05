@@ -100,17 +100,17 @@ class CustomBot(commands.Bot):
             await self.change_presence(activity=discord.Game(name=self._activity_str))
 
     # Métodos
-    def load_internal_settings(self, file_name: str) -> dict:
+    def load_internal_settings(self, path: str) -> dict:
         '''
         Carrega as configurações internas.
         '''
 
-        if file_name == "":
+        if path == "":
             return
 
-        if exists(join("System", file_name)):
+        if exists(path):
 
-            with open(join("System", file_name), 'r+', encoding="utf-8") as internal_settings_file:
+            with open(path, 'r+', encoding="utf-8") as internal_settings_file:
                 internal_settings_json = internal_settings_file.read()
 
             return json.loads(internal_settings_json)
@@ -120,14 +120,14 @@ class CustomBot(commands.Bot):
 
         return None
 
-    def set_internal_settings(self, settings_file: str) -> None:
+    def set_internal_settings(self, path: str) -> None:
         '''
         Define as configurações internas.
         '''
 
         print(f"[{datetime.now()}][System]: Loading internal definitions")
 
-        internal_settings = self.load_internal_settings(settings_file)
+        internal_settings = self.load_internal_settings(path)
 
         self._admins_id = list(map(int, internal_settings["ADM_ID"]))
         self._token = internal_settings["TOKEN"]
