@@ -1,2 +1,3 @@
-# Discord-Bot-Framework
+# Discpybot Framework
+
 A simple python bot framework

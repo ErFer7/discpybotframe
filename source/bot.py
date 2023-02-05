@@ -36,7 +36,12 @@ class CustomBot(commands.Bot):
     _ready: bool
 
     # Construtor
-    def __init__(self, command_prefix: str, help_command: Callable, name: str, version: str) -> None:
+    def __init__(self,
+                 command_prefix: str,
+                 help_command: Callable,
+                 name: str,
+                 settings_file: str,
+                 version: str) -> None:
 
         super().__init__(command_prefix=command_prefix, help_command=help_command, intents=None)
 
@@ -53,7 +58,7 @@ class CustomBot(commands.Bot):
         print(f"[{datetime.now()}][System]: Initializing the RNG")
 
         seed(time_ns())
-        self.set_internal_settings()
+        self.set_internal_settings(settings_file)
 
     # Métodos assícronos
     @abstractmethod
@@ -115,14 +120,14 @@ class CustomBot(commands.Bot):
 
         return None
 
-    def set_internal_settings(self) -> None:
+    def set_internal_settings(self, settings_file: str) -> None:
         '''
         Define as configurações internas.
         '''
 
         print(f"[{datetime.now()}][System]: Loading internal definitions")
 
-        internal_settings = self.load_internal_settings("internal_settings.json")
+        internal_settings = self.load_internal_settings(settings_file)
 
         self._admins_id = list(map(int, internal_settings["ADM_ID"]))
         self._token = internal_settings["TOKEN"]
@@ -215,10 +220,8 @@ class CustomGuild():
                               "Meetings": {}}
 
         self._guild = self._bot.get_guild(self._identification)
-        self._main_channel = self._bot.get_channel(
-            self._settings["Main channel ID"])
-        self._voice_channel = self._bot.get_channel(
-            self._settings["Voice channel ID"])
+        self._main_channel = self._bot.get_channel(self._settings["Main channel ID"])
+        self._voice_channel = self._bot.get_channel(self._settings["Voice channel ID"])
 
         print(f"[{datetime.now()}][System]: Guild {self._identification} initialized")
 
