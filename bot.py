@@ -42,9 +42,10 @@ class CustomBot(commands.Bot):
                  help_command: Callable,
                  name: str,
                  settings_file: str,
+                 intents,
                  version: str) -> None:
 
-        super().__init__(command_prefix=command_prefix, help_command=help_command, intents=None)
+        super().__init__(command_prefix=command_prefix, help_command=help_command, intents=intents)
 
         self._name = name
         self._version = version
