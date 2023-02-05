@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 '''
-Módulo Bot System
+Módulo Bot System.
 '''
 
 import os
