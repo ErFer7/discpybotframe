@@ -17,8 +17,6 @@ import discord
 
 from discord.ext import commands
 
-from .guild import CustomGuild
-
 
 class CustomBot(commands.Bot):
 
@@ -34,7 +32,7 @@ class CustomBot(commands.Bot):
     _users: dict
     _guilds: dict
     _activity_str: str
-    _ready: bool
+    _custom_ready: bool
 
     # Construtor
     def __init__(self,
@@ -54,7 +52,7 @@ class CustomBot(commands.Bot):
         self._admins_id = []
         self._token = ""
         self._activity_str = ""
-        self._ready = False
+        self._custom_ready = False
 
         print(f"[{datetime.now()}][System]: Initializing {self._name} {self._version}")
         print(f"[{datetime.now()}][System]: Initializing the RNG")
@@ -62,11 +60,16 @@ class CustomBot(commands.Bot):
         seed(time_ns())
         self.set_internal_settings(settings_file)
 
-    # Métodos assícronos
     @abstractmethod
     async def setup_hook(self) -> None:
         '''
         Pré-setup.
+        '''
+
+    @abstractmethod
+    def load_guilds(self) -> None:
+        '''
+        Carrega os servidores.
         '''
 
     async def prepare_data(self) -> None:
@@ -74,17 +77,15 @@ class CustomBot(commands.Bot):
         Prepara os dados e a presença.
         '''
 
-        if not self._ready:
-            self._ready = True
+        if not self._custom_ready:
+            self._custom_ready = True
         else:
             return
 
         print(f"[{datetime.now()}][System]: Waiting...")
         await self.wait_until_ready()
 
-        print(f"[{datetime.now()}][System]: Loading guilds definitions")
-        for guild in self.guilds:
-            self._guilds[str(guild.id)] = CustomGuild(guild.id, self)
+        self.load_guilds()
 
         print(f"[{datetime.now()}][System]: {self._name} {self._version} ready to operate")
         print(f"[{datetime.now()}][System]: Logged as {self.user.name}, with the id: {self.user.id}")
@@ -144,12 +145,13 @@ class CustomBot(commands.Bot):
 
         return super().run(*args, **kwargs)
 
-    def write_settings_for_guild(self, guild_id: int) -> None:
+    def save_guild(self, guild_id: int) -> None:
         '''
-        Salva as configurações do servidor específico.
+        Salva as configurações e dados do servidor específico.
         '''
 
         self._guilds[str(guild_id)].write_settings()
+        self._guilds[str(guild_id)].write_data()
 
     def write_settings_for_all(self) -> None:
         '''

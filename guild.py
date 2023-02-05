@@ -33,7 +33,7 @@ class CustomGuild():
         self._identification = identification
         self._bot = bot
 
-        self.load_settings()
+        self.load_settings(guilds_dir)
         self.load_data(default_data=default_data)
 
         print(f"[{datetime.now()}][System]: Guild {self._identification} initialized")
