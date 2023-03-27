@@ -29,7 +29,6 @@ class CustomGuild():
 
     # Construtor
     def __init__(self, identification: int, default_data: dict, bot, guilds_dir: str = "guilds") -> None:
-
         self._identification = identification
         self._bot = bot
 
@@ -47,7 +46,6 @@ class CustomGuild():
         path = join(guilds_dir, f"{self._identification}_settings.json")
 
         with open(path, 'w+', encoding="utf-8") as settings_file:
-
             settings_json = json.dumps(self._settings, indent=4)
             settings_file.write(settings_json)
 
@@ -97,7 +95,6 @@ class CustomGuild():
         data_path = join(guilds_dir, f"{self._identification}_data.json")
 
         if exists(data_path):
-
             with open(data_path, 'r+', encoding="utf-8") as data_file:
                 data_json = data_file.read()
 

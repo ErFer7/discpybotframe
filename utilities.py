@@ -21,7 +21,7 @@ class DiscordUtilities():
                            error: bool = False,
                            url: str = None) -> None:
         '''
-        Cria um embed padronizado.
+        Envia uma mensagem.
         '''
 
         embed = None
@@ -47,5 +47,20 @@ class DiscordUtilities():
                                   color=color)
 
         embed.set_footer(text=f"{footer}")
+        await ctx.send(embed=embed)
 
+    @staticmethod
+    async def send_error_message(ctx, description: str, footer: str) -> None:
+        '''
+        Envia um erro.
+        '''
+
+        prefix = "❌ "
+        color = discord.Color.red()
+        embed = discord.Embed(title=f"{prefix} **Erro**",
+                                  type="rich",
+                                  description=description,
+                                  color=color)
+
+        embed.set_footer(text=f"{footer}")
         await ctx.send(embed=embed)

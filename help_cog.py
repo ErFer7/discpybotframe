@@ -21,7 +21,6 @@ class HelpCog(commands.Cog):
 
     # Construtor
     def __init__(self, help_text) -> None:
-
         self._help_text = help_text
 
         print(f"[{datetime.now()}][Help]: Help system initialized")

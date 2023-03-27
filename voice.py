@@ -22,7 +22,6 @@ class VoiceController():
     _lock: Lock
 
     def __init__(self, bot, ffmpeg_path: str) -> None:
-
         self._bot = bot
         self._voice_client = None
         self._voice_channel = None
@@ -35,7 +34,6 @@ class VoiceController():
         '''
 
         if self._voice_client is not None and self._voice_client.is_connected():
-
             if self._voice_client.is_playing():
                 self._voice_client.stop()
 

@@ -22,7 +22,6 @@ class AdminCog(commands.Cog):
     _goodbye_message: str
 
     def __init__(self, bot, goodbye_message: str):
-
         self._bot = bot
         self._goodbye_message = goodbye_message
 
@@ -38,12 +37,7 @@ class AdminCog(commands.Cog):
         print(f"[{datetime.now()}][Admin]: <off> (Author: {ctx.author.name})")
 
         if not self._bot.is_admin(ctx.author.id):
-
-            await DiscordUtilities.send_message(ctx,
-                                                "Comando inválido",
-                                                "Você não tem permissão para usar este comando",
-                                                "shutdown",
-                                                True)
+            await DiscordUtilities.send_error_message(ctx, "Você não tem permissão para usar este comando", "shutdown")
             return
 
         # Envia uma mensagem de saída
@@ -89,12 +83,7 @@ class AdminCog(commands.Cog):
         print(f"[{datetime.now()}][Admin]: <save> (Author: {ctx.author.name})")
 
         if not self._bot.is_admin(ctx.author.id):
-
-            await DiscordUtilities.send_message(ctx,
-                                                "Comando inválido",
-                                                "Você não tem permissão para usar este comando",
-                                                "shutdown",
-                                                True)
+            await DiscordUtilities.send_error_message(ctx, "Você não tem permissão para usar este comando", "shutdown")
             return
 
         self._bot.save_guild(ctx.guild.id)

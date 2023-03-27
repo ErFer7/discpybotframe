@@ -34,7 +34,6 @@ class CustomBot(commands.Bot):
     _activity_str: str
     _custom_ready: bool
 
-    # Construtor
     def __init__(self,
                  command_prefix: str,
                  help_command: Callable,
@@ -60,6 +59,41 @@ class CustomBot(commands.Bot):
         seed(time_ns())
         self.set_internal_settings(settings_file)
 
+    # Eventos
+    @commands.Cog.listener()
+    async def on_ready(self) -> None:
+        '''
+        Evento de "dados preparados".
+        '''
+
+        print(f"[{datetime.now()}][Event]: Ready")
+        await self.prepare_data()
+
+    @commands.Cog.listener()
+    async def on_connect(self) -> None:
+        '''
+        Evento de conexão.
+        '''
+
+        print(f"[{datetime.now()}][Event]: Connected")
+
+    @commands.Cog.listener()
+    async def on_disconnect(self) -> None:
+        '''
+        Evento de desconexão.
+        '''
+
+        print(f"[{datetime.now()}][Event]: Disconnected")
+
+    @commands.Cog.listener()
+    async def on_resumed(self) -> None:
+        '''
+        Evento de retorno.
+        '''
+
+        print(f"[{datetime.now()}][Event]: Resumed")
+
+    # Métodos
     @abstractmethod
     async def setup_hook(self) -> None:
         '''
@@ -112,7 +146,6 @@ class CustomBot(commands.Bot):
             return
 
         if exists(path):
-
             with open(path, 'r+', encoding="utf-8") as internal_settings_file:
                 internal_settings_json = internal_settings_file.read()
 
