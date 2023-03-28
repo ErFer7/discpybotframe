@@ -46,7 +46,7 @@ class AdminCog(commands.Cog):
         # Salva todos os servidores
         print(f"[{datetime.now()}][Admin]: Saving definitions for every guild")
 
-        self._bot.write_settings_for_all()
+        self._bot.save_all_guilds()
 
         # Encerra o bot
         print(f"[{datetime.now()}][Admin]: Exiting")

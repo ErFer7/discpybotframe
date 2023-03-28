@@ -15,7 +15,7 @@ from typing import Callable
 
 import discord
 
-from discord.ext import commands
+from discord.ext import commands, tasks
 
 
 class CustomBot(commands.Bot):
@@ -30,7 +30,7 @@ class CustomBot(commands.Bot):
     _token: str
     _admins_id: int
     _users: dict
-    _guilds: dict
+    _custom_guilds: dict
     _activity_str: str
     _custom_ready: bool
 
@@ -46,7 +46,7 @@ class CustomBot(commands.Bot):
 
         self._name = name
         self._version = version
-        self._guilds = {}
+        self._custom_guilds = {}
         self._users = {}
         self._admins_id = []
         self._token = ""
@@ -58,6 +58,26 @@ class CustomBot(commands.Bot):
 
         seed(time_ns())
         self.set_internal_settings(settings_file)
+
+    # Getters e Setters
+    @property
+    def custom_guilds(self) -> list:
+        '''
+        Getter dos servers.
+        '''
+
+        return self._custom_guilds
+
+    # Loops
+    @tasks.loop(seconds=600.0)
+    async def save(self) -> None:
+        '''
+        Salva os dados.
+        '''
+
+        print(f"[{datetime.now()}][System]: Saving all guilds automatically")
+
+        self.save_all_guilds()
 
     # Eventos
     @commands.Cog.listener()
@@ -143,7 +163,7 @@ class CustomBot(commands.Bot):
         '''
 
         if path == "":
-            return
+            return None
 
         if exists(path):
             with open(path, 'r+', encoding="utf-8") as internal_settings_file:
@@ -183,16 +203,17 @@ class CustomBot(commands.Bot):
         Salva as configurações e dados do servidor específico.
         '''
 
-        self._guilds[str(guild_id)].write_settings()
-        self._guilds[str(guild_id)].write_data()
+        self._custom_guilds[str(guild_id)].write_settings()
+        self._custom_guilds[str(guild_id)].write_data()
 
-    def write_settings_for_all(self) -> None:
+    def save_all_guilds(self) -> None:
         '''
         Salva as configurações de todos os servidores.
         '''
 
-        for guild in self._guilds.values():
+        for guild in self._custom_guilds.values():
             guild.write_settings()
+            guild.write_data()
 
     def is_admin(self, author_id: int) -> bool:
         '''
@@ -220,4 +241,4 @@ class CustomBot(commands.Bot):
         Retorna um server personalizado.
         '''
 
-        return self._guilds[str(guild_id)]
+        return self._custom_guilds[str(guild_id)]
