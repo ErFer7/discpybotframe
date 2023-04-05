@@ -4,14 +4,13 @@
 Módulo para a cog dos comandos de ajuda
 '''
 
-from datetime import datetime
-
 from discord.ext import commands
 
-from .utilities import DiscordUtilities
+from discpybotframe.utilities import DiscordUtilities
+from discpybotframe.cog import Cog
 
 
-class HelpCog(commands.Cog):
+class HelpCog(Cog):
 
     '''
     Cog dos comandos de ajuda.
@@ -20,10 +19,10 @@ class HelpCog(commands.Cog):
     _help_text: str
 
     # Construtor
-    def __init__(self, help_text) -> None:
+    def __init__(self, bot, help_text) -> None:
+        super().__init__(bot)
         self._help_text = help_text
-
-        print(f"[{datetime.now()}][Help]: Help system initialized")
+        self.bot.log("HelpCog", "Help system initialized")
 
     # Comandos
     @commands.command(name="help", aliases=("ajuda", "h", "aj"))
@@ -32,5 +31,5 @@ class HelpCog(commands.Cog):
         Envia uma mensagem de ajuda.
         '''
 
-        print(f"[{datetime.now()}][Help]: <help> (Author: {ctx.author.name})")
+        self.bot.log("HelpCog", f"<help> (Author: {ctx.author.name})")
         await DiscordUtilities.send_message(ctx, "Ajuda", self._help_text, "help")

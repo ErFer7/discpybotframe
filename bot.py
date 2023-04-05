@@ -11,14 +11,14 @@ from os.path import exists
 from time import time_ns
 from random import choice, seed
 from datetime import datetime
-from typing import Callable
 
 import discord
 
 from discord.ext import commands, tasks
+from discord.ext.commands import HelpCommand
 
 
-class CustomBot(commands.Bot):
+class Bot(commands.Bot):
 
     '''
     Bot customizado.
@@ -28,7 +28,7 @@ class CustomBot(commands.Bot):
     _name: str
     _version: str
     _token: str
-    _admins_id: int
+    _admins_id: list
     _users: dict
     _custom_guilds: dict
     _activity_str: str
@@ -36,7 +36,7 @@ class CustomBot(commands.Bot):
 
     def __init__(self,
                  command_prefix: str,
-                 help_command: Callable,
+                 help_command: HelpCommand,
                  name: str,
                  settings_file: str,
                  intents,
@@ -53,15 +53,15 @@ class CustomBot(commands.Bot):
         self._activity_str = ""
         self._custom_ready = False
 
-        print(f"[{datetime.now()}][System]: Initializing {self._name} {self._version}")
-        print(f"[{datetime.now()}][System]: Initializing the RNG")
+        self.log('Bot', f'Initializing {self._name} {self._version}')
+        self.log('Bot', 'Initializing the RNG')
 
         seed(time_ns())
         self.set_internal_settings(settings_file)
 
     # Getters e Setters
     @property
-    def custom_guilds(self) -> list:
+    def custom_guilds(self) -> dict:
         '''
         Getter dos servers.
         '''
@@ -75,8 +75,7 @@ class CustomBot(commands.Bot):
         Salva os dados.
         '''
 
-        print(f"[{datetime.now()}][System]: Saving all guilds automatically")
-
+        self.log('Bot', 'Saving all guilds automatically')
         self.save_all_guilds()
 
     # Eventos
@@ -86,7 +85,7 @@ class CustomBot(commands.Bot):
         Evento de "dados preparados".
         '''
 
-        print(f"[{datetime.now()}][Event]: Ready")
+        self.log('Bot', 'Ready')
         await self.prepare_data()
 
     @commands.Cog.listener()
@@ -95,7 +94,7 @@ class CustomBot(commands.Bot):
         Evento de conexão.
         '''
 
-        print(f"[{datetime.now()}][Event]: Connected")
+        self.log('Bot', 'Connected')
 
     @commands.Cog.listener()
     async def on_disconnect(self) -> None:
@@ -103,7 +102,7 @@ class CustomBot(commands.Bot):
         Evento de desconexão.
         '''
 
-        print(f"[{datetime.now()}][Event]: Disconnected")
+        self.log('Bot', 'Disconnected')
 
     @commands.Cog.listener()
     async def on_resumed(self) -> None:
@@ -111,7 +110,7 @@ class CustomBot(commands.Bot):
         Evento de retorno.
         '''
 
-        print(f"[{datetime.now()}][Event]: Resumed")
+        self.log('Bot', 'Resumed')
 
     # Métodos
     @abstractmethod
@@ -136,28 +135,32 @@ class CustomBot(commands.Bot):
         else:
             return
 
-        print(f"[{datetime.now()}][System]: Waiting...")
+        self.log('Bot', 'Waiting...')
         await self.wait_until_ready()
 
         self.load_guilds()
 
-        print(f"[{datetime.now()}][System]: {self._name} {self._version} ready to operate")
-        print(f"[{datetime.now()}][System]: Logged as {self.user.name}, with the id: {self.user.id}")
+        if self.user is not None:
+            self.log('Bot', f'{self._name} {self._version} ready to operate')
+            self.log('Bot', f'Logged as {self.user.name}, with the id: {self.user.id}')
 
-        await self.set_activity()
+            await self.set_activity()
+        else:
+            self.log('Bot', 'Failed to get the user data')
+            await self.set_activity('ERROR')
 
-    async def set_activity(self, activity: str = None) -> None:
+    async def set_activity(self, activity: str = '') -> None:
         '''
         Define a atividade.
         '''
 
-        if activity is not None:
+        if activity != '':
             await self.change_presence(activity=discord.Game(name=activity))
         else:
             await self.change_presence(activity=discord.Game(name=self._activity_str))
 
     # Métodos
-    def load_internal_settings(self, path: str) -> dict:
+    def load_internal_settings(self, path: str) -> dict | None:
         '''
         Carrega as configurações internas.
         '''
@@ -166,13 +169,14 @@ class CustomBot(commands.Bot):
             return None
 
         if exists(path):
-            with open(path, 'r+', encoding="utf-8") as internal_settings_file:
+            with open(path, 'r+', encoding='utf-8') as internal_settings_file:
                 internal_settings_json = internal_settings_file.read()
 
             return json.loads(internal_settings_json)
 
-        print(f"[{datetime.now()}][System]: The loading operation has failed."
-              "The file \"internal_settings.json\" should be in the system directory")
+        self.log('Bot',
+                 'The loading operation has failed. The file '
+                 '"internal_settings.json" should be in the system directory')
 
         return None
 
@@ -181,22 +185,25 @@ class CustomBot(commands.Bot):
         Define as configurações internas.
         '''
 
-        print(f"[{datetime.now()}][System]: Loading internal definitions")
+        self.log('Bot', 'Loading internal definitions')
 
         internal_settings = self.load_internal_settings(path)
 
-        self._admins_id = list(map(int, internal_settings["ADM_ID"]))
-        self._token = internal_settings["TOKEN"]
-        self._activity_str = choice(internal_settings["Activities"])
+        if internal_settings is not None:
+            self._admins_id = list(map(int, internal_settings['ADM_ID']))
+            self._token = internal_settings['TOKEN']
+            self._activity_str = choice(internal_settings['Activities'])
+        else:
+            self.log('Bot', 'Failed set internal definitions')
 
     def run(self, *args: tuple, **kwargs: tuple) -> None:
         '''
         Roda o bot.
         '''
 
-        args += (self._token,)
+        args += (self._token,) # type: ignore
 
-        return super().run(*args, **kwargs)
+        return super().run(*args, **kwargs) # type: ignore
 
     def save_guild(self, guild_id: int) -> None:
         '''
@@ -227,12 +234,12 @@ class CustomBot(commands.Bot):
         Retorna um dicionário com informações.
         '''
 
-        info = {"Name": self._name,
-                "Version": self._version,
-                "HTTP loop": self.http,
-                "Latency": self.latency,
-                "Guild count": len(self.guilds),
-                "Voice clients": self.voice_clients}
+        info = {'Name': self._name,
+                'Version': self._version,
+                'HTTP loop': self.http,
+                'Latency': self.latency,
+                'Guild count': len(self.guilds),
+                'Voice clients': self.voice_clients}
 
         return info
 
@@ -242,3 +249,10 @@ class CustomBot(commands.Bot):
         '''
 
         return self._custom_guilds[str(guild_id)]
+
+    def log(self, origin: str, message: str) -> None:
+        '''
+        Exibe uma mensagem no console.
+        '''
+
+        print(f"[{datetime.now()}][{origin}]: {message}")

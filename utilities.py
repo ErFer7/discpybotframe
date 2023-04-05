@@ -19,34 +19,34 @@ class DiscordUtilities():
                            description: str,
                            footer: str,
                            error: bool = False,
-                           url: str = None) -> None:
+                           url: str = '') -> None:
         '''
         Envia uma mensagem.
         '''
 
         embed = None
-        prefix = "❱❱❱"
+        prefix = '❱❱❱'
         color = discord.Color.dark_purple()
 
         if error:
-            prefix = "❌ "
+            prefix = '❌ '
             color = discord.Color.red()
 
         if url is not None:
 
-            embed = discord.Embed(title=f"{prefix} **{title}**",
-                                  type="rich",
+            embed = discord.Embed(title=f'{prefix} **{title}**',
+                                  type='rich',
                                   url=url,
                                   description=description,
                                   color=color)
         else:
 
-            embed = discord.Embed(title=f"{prefix} **{title}**",
-                                  type="rich",
+            embed = discord.Embed(title=f'{prefix} **{title}**',
+                                  type='rich',
                                   description=description,
                                   color=color)
 
-        embed.set_footer(text=f"{footer}")
+        embed.set_footer(text=f'{footer}')
         await ctx.send(embed=embed)
 
     @staticmethod
@@ -55,12 +55,12 @@ class DiscordUtilities():
         Envia um erro.
         '''
 
-        prefix = "❌ "
+        prefix = '❌ '
         color = discord.Color.red()
-        embed = discord.Embed(title=f"{prefix} **Erro**",
-                                  type="rich",
+        embed = discord.Embed(title=f'{prefix} **Erro**',
+                                  type='rich',
                                   description=description,
                                   color=color)
 
-        embed.set_footer(text=f"{footer}")
+        embed.set_footer(text=f'{footer}')
         await ctx.send(embed=embed)

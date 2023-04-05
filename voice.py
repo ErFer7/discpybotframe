@@ -4,9 +4,13 @@
 Módulo para o controle de conexões aos canais de voz e à reprodução de áudios.
 '''
 
+from __future__ import annotations
+
 from asyncio import Lock
 
 import discord
+
+from discpybotframe.bot import Bot
 
 
 class VoiceController():
@@ -15,9 +19,9 @@ class VoiceController():
     Controlador de voz.
     '''
 
-    _bot: None
-    _voice_client: discord.VoiceClient
-    _voice_channel: discord.VoiceChannel
+    _bot: Bot
+    _voice_client: discord.VoiceClient | None
+    _voice_channel: discord.VoiceChannel | None
     _ffmpeg_path: str
     _lock: Lock
 
@@ -78,7 +82,7 @@ class VoiceController():
         await self._lock.acquire()
         try:
             if self._voice_client is not None and self._voice_client.is_connected():
-                for member in self._voice_channel.members:
+                for member in self._voice_channel.members: # type: ignore
                     if member != self._bot:
                         await member.move_to(None)
         finally:
