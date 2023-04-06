@@ -24,7 +24,7 @@ class DiscordUtilities():
         Envia uma mensagem.
         '''
 
-        embed = None
+        embed: discord.Embed | None = None
         prefix = '❱❱❱'
         color = discord.Color.dark_purple()
 

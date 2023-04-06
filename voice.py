@@ -5,85 +5,113 @@ Módulo para o controle de conexões aos canais de voz e à reprodução de áud
 '''
 
 from __future__ import annotations
-
-from asyncio import Lock
+from typing import TYPE_CHECKING
 
 import discord
 
-from discpybotframe.bot import Bot
+if TYPE_CHECKING:
+    from discpybotframe.bot import Bot
 
 
 class VoiceController():
 
     '''
     Controlador de voz.
+
+    Atualmente, o controlador de voz suporta apenas um canal de voz.
     '''
 
     _bot: Bot
-    _voice_client: discord.VoiceClient | None
-    _voice_channel: discord.VoiceChannel | None
     _ffmpeg_path: str
-    _lock: Lock
 
     def __init__(self, bot, ffmpeg_path: str) -> None:
         self._bot = bot
-        self._voice_client = None
-        self._voice_channel = None
         self._ffmpeg_path = ffmpeg_path
-        self._lock = Lock()
 
     def play_audio(self, source: str) -> None:
         '''
         Toca um áudio.
         '''
 
-        if self._voice_client is not None and self._voice_client.is_connected():
-            if self._voice_client.is_playing():
-                self._voice_client.stop()
+        voice_client: discord.VoiceClient | None = None
 
-            self._voice_client.play(discord.FFmpegPCMAudio(source=source, executable=self._ffmpeg_path))
+        if len(self._bot.voice_clients) > 0:
+            voice_client = self._bot.voice_clients[0] # type: ignore
+
+        self._bot.log('VoiceController', f'<play_audio> Playing audio on voice client {voice_client}')
+
+        if voice_client is not None and voice_client.is_connected():
+            if voice_client.is_playing():
+                voice_client.stop()
+
+            voice_client.play(discord.FFmpegPCMAudio(source=source, executable=self._ffmpeg_path))
 
     async def connect(self, voice_channel: discord.VoiceChannel) -> None:
         '''
         Conecta-se a um canal.
         '''
 
-        await self._lock.acquire()
-        try:
-            if voice_channel is not None and self._voice_client is None:
-                self._voice_channel = voice_channel
-                self._voice_client = await voice_channel.connect()
+        voice_client: discord.VoiceClient | None = None
 
-                if self._voice_client is not None and self._voice_client.is_connected():
-                    if self._voice_client.is_playing():
-                        self._voice_client.stop()
-        finally:
-            self._lock.release()
+        if len(self._bot.voice_clients) > 0:
+            voice_client = self._bot.voice_clients[0] # type: ignore
+
+        self._bot.log('VoiceController', f'<connect> connecting to voice channel {voice_channel}')
+
+        if voice_channel is not None and voice_client is None:
+            voice_client = await voice_channel.connect()
+
+            if voice_client is not None and voice_client.is_connected():
+                if voice_client.is_playing():
+                    voice_client.stop()
 
     async def disconnect(self) -> None:
         '''
         Desconecta-se de um canal.
         '''
 
-        await self._lock.acquire()
-        try:
-            if self._voice_client is not None and self._voice_client.is_connected():
-                await self._voice_client.disconnect()
-                self._voice_client = None
-                self._voice_channel = None
-        finally:
-            self._lock.release()
+        voice_client: discord.VoiceClient | None = None
+
+        if len(self._bot.voice_clients) > 0:
+            voice_client = self._bot.voice_clients[0] # type: ignore
+
+        self._bot.log('VoiceController', f'<disconnect> disconnecting voice client {voice_client}')
+
+        if voice_client is not None and voice_client.is_connected():
+            await voice_client.disconnect()
+
+    async def get_members(self) -> list[discord.Member]:
+        '''
+        Retorna uma lista com todos os membros de um canal.
+        '''
+
+        voice_client: discord.VoiceClient | None = None
+
+        if len(self._bot.voice_clients) > 0:
+            voice_client = self._bot.voice_clients[0] # type: ignore
+
+        self._bot.log('VoiceController',
+                      f'<get_members> getting members from channel in voice client {voice_client}')
+
+        if voice_client is not None and voice_client.is_connected():
+            return voice_client.channel.members
+
+        return []
 
     async def remove_all_members(self) -> None:
         '''
         Remove todos os membros de um canal.
         '''
 
-        await self._lock.acquire()
-        try:
-            if self._voice_client is not None and self._voice_client.is_connected():
-                for member in self._voice_channel.members: # type: ignore
-                    if member != self._bot:
-                        await member.move_to(None)
-        finally:
-            self._lock.release()
+        voice_client: discord.VoiceClient | None = None
+
+        if len(self._bot.voice_clients) > 0:
+            voice_client = self._bot.voice_clients[0] # type: ignore
+
+        self._bot.log('VoiceController',
+                      f'<remove_all_members> removing all members from channel in voice channel {voice_client}')
+
+        if voice_client is not None and voice_client.is_connected():
+            for member in voice_client.channel.members:
+                if member.id != self._bot.user.id:  # type: ignore
+                    await member.move_to(None)

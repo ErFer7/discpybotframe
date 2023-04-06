@@ -5,6 +5,7 @@ Módulo para os servers.
 '''
 
 from __future__ import annotations
+from typing import TYPE_CHECKING
 
 import json
 
@@ -13,7 +14,8 @@ from os.path import exists, join
 
 import discord
 
-from discpybotframe.bot import Bot
+if TYPE_CHECKING:
+    from discpybotframe.bot import Bot
 
 
 class Guild():
@@ -102,8 +104,8 @@ class Guild():
 
         self._main_channel_id = settings['Main channel ID']
         self._voice_channel_id = settings['Voice channel ID']
-        self._main_channel = self._bot.get_channel(self._main_channel_id) # type: ignore
-        self._voice_channel = self._bot.get_channel(self._voice_channel_id) # type: ignore
+        self._main_channel = self._bot.get_channel(self._main_channel_id)  # type: ignore
+        self._voice_channel = self._bot.get_channel(self._voice_channel_id)  # type: ignore
 
     def write_settings(self, guilds_dir: str = 'guilds') -> None:
         '''
@@ -205,7 +207,7 @@ class Guild():
         '''
 
         self._main_channel_id = main_channel_id
-        self._main_channel = self._bot.get_channel(self._settings['Main channel ID']) # type: ignore
+        self._main_channel = self._bot.get_channel(self._settings['Main channel ID'])  # type: ignore
 
         self._bot.log('Guild', f'The main channel of the guild {self._identification} has been updated')
 
@@ -225,6 +227,6 @@ class Guild():
         '''
 
         self._voice_channel_id = voice_channel_id
-        self._voice_channel = self._bot.get_channel(self._settings['Voice channel ID']) # type: ignore
+        self._voice_channel = self._bot.get_channel(self._settings['Voice channel ID'])  # type: ignore
 
         self._bot.log('Guild', f'The main voice channel of the guild {self._identification} has been updated')

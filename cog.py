@@ -5,10 +5,12 @@ Módulo para a definição de uma cog.
 '''
 
 from __future__ import annotations
+from typing import TYPE_CHECKING
 
 from discord.ext import commands
 
-from discpybotframe.bot import Bot
+if TYPE_CHECKING:
+    from discpybotframe.bot import Bot
 
 
 class Cog(commands.Cog):

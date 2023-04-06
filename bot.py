@@ -4,6 +4,9 @@
 Módulo Bot System.
 '''
 
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 import json
 
 from abc import abstractmethod
@@ -16,6 +19,9 @@ import discord
 
 from discord.ext import commands, tasks
 from discord.ext.commands import HelpCommand
+
+if TYPE_CHECKING:
+    from source.guild import Guild
 
 
 class Bot(commands.Bot):
@@ -69,7 +75,7 @@ class Bot(commands.Bot):
         return self._custom_guilds
 
     # Loops
-    @tasks.loop(seconds=600.0)
+    @tasks.loop(seconds=600.0)  # 10 minutos
     async def save(self) -> None:
         '''
         Salva os dados.
@@ -201,9 +207,9 @@ class Bot(commands.Bot):
         Roda o bot.
         '''
 
-        args += (self._token,) # type: ignore
+        args += (self._token,)  # type: ignore
 
-        return super().run(*args, **kwargs) # type: ignore
+        return super().run(*args, **kwargs)  # type: ignore
 
     def save_guild(self, guild_id: int) -> None:
         '''
@@ -243,7 +249,7 @@ class Bot(commands.Bot):
 
         return info
 
-    def get_custom_guild(self, guild_id: int):
+    def get_custom_guild(self, guild_id: int) -> Guild:
         '''
         Retorna um server personalizado.
         '''
