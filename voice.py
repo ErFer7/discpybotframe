@@ -22,11 +22,9 @@ class VoiceController():
     '''
 
     _bot: Bot
-    _ffmpeg_path: str
 
-    def __init__(self, bot, ffmpeg_path: str) -> None:
+    def __init__(self, bot: Bot) -> None:
         self._bot = bot
-        self._ffmpeg_path = ffmpeg_path
 
     def play_audio(self, source: str) -> None:
         '''
@@ -44,7 +42,7 @@ class VoiceController():
             if voice_client.is_playing():
                 voice_client.stop()
 
-            voice_client.play(discord.FFmpegPCMAudio(source=source, executable=self._ffmpeg_path))
+            voice_client.play(discord.FFmpegPCMAudio(source=source))
 
     async def connect(self, voice_channel: discord.VoiceChannel) -> None:
         '''
