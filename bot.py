@@ -37,7 +37,7 @@ class Bot(commands.Bot):
     _admins_id: list
     _users: dict
     _custom_guilds: dict
-    _activity_str: str
+    _activities: list[str]
     _custom_ready: bool
 
     def __init__(self,
@@ -55,8 +55,8 @@ class Bot(commands.Bot):
         self._custom_guilds = {}
         self._users = {}
         self._admins_id = []
-        self._token = ""
-        self._activity_str = ""
+        self._token = ''
+        self._activities = ['Error']
         self._custom_ready = False
 
         self.log('Bot', f'Initializing {self._name} {self._version}')
@@ -84,6 +84,15 @@ class Bot(commands.Bot):
         self.log('Bot', 'Saving all guilds automatically')
         self.save_all_guilds()
 
+    @tasks.loop(seconds=3600.0)  # 1 hora
+    async def activity(self) -> None:
+        '''
+        Salva os dados.
+        '''
+
+        self.log('Bot', 'Setting activity automatically')
+        await self.set_activity()
+
     # Eventos
     @commands.Cog.listener()
     async def on_ready(self) -> None:
@@ -93,6 +102,9 @@ class Bot(commands.Bot):
 
         self.log('Bot', 'Ready')
         await self.prepare_data()
+
+        self.save.start()
+        self.activity.start()
 
     @commands.Cog.listener()
     async def on_connect(self) -> None:
@@ -149,21 +161,25 @@ class Bot(commands.Bot):
         if self.user is not None:
             self.log('Bot', f'{self._name} {self._version} ready to operate')
             self.log('Bot', f'Logged as {self.user.name}, with the id: {self.user.id}')
-
-            await self.set_activity()
         else:
             self.log('Bot', 'Failed to get the user data')
-            await self.set_activity('ERROR')
 
-    async def set_activity(self, activity: str = '') -> None:
+    async def set_activity(self, activity: str = '', status: discord.Status = discord.Status.online) -> None:
         '''
         Define a atividade.
         '''
 
         if activity != '':
-            await self.change_presence(activity=discord.Game(name=activity))
+            await self.change_presence(activity=discord.Game(name=activity), status=status)
         else:
-            await self.change_presence(activity=discord.Game(name=self._activity_str))
+            await self.change_presence(activity=discord.Game(name=self.randomize_activity()), status=status)
+
+    def randomize_activity(self) -> str:
+        '''
+        Randomiza a atividade.
+        '''
+
+        return choice(self._activities)
 
     # Métodos
     def load_internal_settings(self, path: str) -> dict | None:
@@ -198,7 +214,7 @@ class Bot(commands.Bot):
         if internal_settings is not None:
             self._admins_id = list(map(int, internal_settings['ADM_ID']))
             self._token = internal_settings['TOKEN']
-            self._activity_str = choice(internal_settings['Activities'])
+            self._activities = internal_settings['Activities']
         else:
             self.log('Bot', 'Failed set internal definitions')
 
