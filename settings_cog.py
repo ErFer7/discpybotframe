@@ -58,7 +58,13 @@ class SettingsCog(Cog):
 
         channel_found = False
 
-        for channel in ctx.guild.voice_channels:
+        guild = ctx.guild
+
+        if guild is None:
+            await DiscordUtilities.send_error_message(ctx, 'Não há canais de voz aqui', 'voice_channel')
+            return
+
+        for channel in guild.voice_channels:
             if channel.name == args[0]:
                 self._bot.get_custom_guild(ctx.guild.id).update_voice_channel(channel.id)
                 channel_found = True

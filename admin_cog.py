@@ -40,11 +40,6 @@ class AdminCog(Cog):
         # Envia uma mensagem de saída
         await DiscordUtilities.send_message(ctx, 'Encerrando', self._goodbye_message, 'shutdown')
 
-        # Salva todos os servidores
-        self.bot.log('AdminCog', 'Saving definitions for every guild')
-
-        self.bot.save_all_guilds()
-
         # Encerra o bot
         self.bot.log('AdminCog', 'Exiting')
         await self.bot.close()
@@ -70,19 +65,3 @@ class AdminCog(Cog):
                           ⬩ **Instâncias de voz:** {bot_info['Voice clients']}'''
 
         await DiscordUtilities.send_message(ctx, 'Informações', description, 'info')
-
-    @commands.command(name='save')
-    async def save(self, ctx) -> None:
-        '''
-        Salva os servidores.
-        '''
-
-        self.bot.log('AdminCog', f'<save> (Author: {ctx.author.name})')
-
-        if not self.bot.is_admin(ctx.author.id):
-            await DiscordUtilities.send_error_message(ctx, 'Você não tem permissão para usar este comando', 'shutdown')
-            return
-
-        self.bot.save_guild(ctx.guild.id)
-
-        await DiscordUtilities.send_message(ctx, 'Salvando', 'Os dados salvos são únicos para cada servidor', 'save')
