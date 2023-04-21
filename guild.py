@@ -28,27 +28,47 @@ class Guild():
     _identification: int
     _bot: Bot
     _guild: discord.Guild
-    _settings: dict
-    _stored_data: dict
     _main_channel_id: int
     _voice_channel_id: int
     _main_channel: discord.TextChannel | None
     _voice_channel: discord.VoiceChannel | None
 
     # Construtor
-    def __init__(self, identification: int, default_data: dict, bot, guilds_dir: str = 'guilds') -> None:
+    def __init__(self, identification: int, bot: Bot) -> None:
         self._identification = identification
         self._bot = bot
-        self._guild = self._bot.get_guild(self._identification)
-        self._settings = {}
-        self._stored_data = {}
+        self._guild = self._bot.get_guild(self._identification) # type: ignore
         self._main_channel_id = 0
         self._voice_channel_id = 0
         self._main_channel = None
         self._voice_channel = None
 
-        self.load_settings(guilds_dir)
-        self.load_data(default_data=default_data)
+        # Insere a guild no banco de dados se ela não existir
+        query = f'''
+                    INSERT OR IGNORE INTO Guild (ID, Name, Kick)
+                    VALUES ({self._identification}, '{self._guild.name}', FALSE);
+                 '''
+
+        self.bot.database_controller.cursor.execute(query)
+        self.bot.database_controller.connection.commit()
+
+        query = f'''
+                    SELECT Name FROM Guild WHERE ID = {self._identification};
+                 '''
+
+        response = self.bot.database_controller.cursor.execute(query)
+
+        if self._guild.name != response.fetchone()[0]:  # type: ignore
+            query = f'''
+                        UPDATE Guild SET Name = '{self._guild.name}'
+                        WHERE ID = {self._identification};
+                     '''
+
+            self.bot.database_controller.cursor.execute(query)
+            self.bot.database_controller.connection.commit()
+
+        self.load_settings()
+        self.load_data()
 
         self._bot.log('Guild', f'Guild {self._identification} initialized')
 
@@ -69,127 +89,33 @@ class Guild():
 
         return self._guild
 
-    @property
-    def settings(self) -> dict:
-        '''
-        Getter das configurações.
-        '''
-
-        return self._settings
-
-    @property
-    def stored_data(self) -> dict:
-        '''
-        Getter dos dados.
-        '''
-
-        return self._stored_data
-
     # Métodos
-    def prepare_settings(self) -> dict:
-        '''
-        Converte as configurações para um formato de dicionário.
-        '''
-
-        settings = {'Guild ID': self._identification,
-                    'Main channel ID': self._main_channel_id,
-                    'Voice channel ID': self._voice_channel_id}
-
-        return settings
-
-    def set_loaded_settings(self, settings: dict) -> None:
-        '''
-        Aplica as configurações carregadas.
-        '''
-
-        self._main_channel_id = settings['Main channel ID']
-        self._voice_channel_id = settings['Voice channel ID']
-        self._main_channel = self._bot.get_channel(self._main_channel_id)  # type: ignore
-        self._voice_channel = self._bot.get_channel(self._voice_channel_id)  # type: ignore
-
-    def write_settings(self, guilds_dir: str = 'guilds') -> None:
-        '''
-        Escreve as configurações do servidor.
-        '''
-
-        self._settings = self.prepare_settings()
-
-        path = join(guilds_dir, f'{self._identification}_settings.json')
-
-        with open(path, 'w+', encoding='utf-8') as settings_file:
-            settings_json = json.dumps(self._settings, indent=4)
-            settings_file.write(settings_json)
-
-        self._bot.log('Guild', f'Settings for guild {self._identification} saved')
-
-    def load_settings(self, guilds_dir: str = 'guilds') -> None:
+    def load_settings(self) -> None:
         '''
         Lê as configurações do servidor.
         '''
 
-        settings_path = join(guilds_dir, f'{self._identification}_settings.json')
+        query = f'''
+                    SELECT MainTextChannelID, MainVoiceChannelID FROM Guild
+                    WHERE ID = {self._identification};
+                '''
 
-        if exists(settings_path):
-            with open(settings_path, 'r+', encoding='utf-8') as settings_file:
-                settings_json = settings_file.read()
+        response = self.bot.database_controller.cursor.execute(query)
+        self._main_channel_id, self._voice_channel_id = response.fetchone()
 
-            self._settings = json.loads(settings_json)
-        else:
-            self._settings = {'Guild ID': self._identification,
-                              'Main channel ID': 0,
-                              'Voice channel ID': 0}
+        if self._main_channel_id != 0:
+            self._main_channel = self._bot.get_channel(self._main_channel_id)  # type: ignore
 
-        self.set_loaded_settings(self._settings)
+        if self._voice_channel_id != 0:
+            self._voice_channel = self._bot.get_channel(self._voice_channel_id)  # type: ignore
 
         self._bot.log('Guild', f'Settings for guild {self._identification} loaded')
 
     @abstractmethod
-    def prepare_data(self) -> dict:
+    def load_data(self) -> None:
         '''
-        Converte os dados para um formato de dicionário.
+        Lê os dados do servidor.
         '''
-
-        return {}
-
-    @abstractmethod
-    def set_loaded_data(self, settings: dict) -> None:
-        '''
-        Aplica as configurações carregadas.
-        '''
-
-    def write_data(self, guilds_dir: str = 'guilds') -> None:
-        '''
-        Escreve os dados do servidor.
-        '''
-
-        self._stored_data = self.prepare_data()
-
-        path = join(guilds_dir, f'{self._identification}_data.json')
-
-        with open(path, 'w+', encoding='utf-8') as data_file:
-            data_json = json.dumps(self._stored_data, indent=4)
-            data_file.write(data_json)
-
-        self._bot.log('Guild', f'Data for guild {self._identification} saved')
-
-    def load_data(self, default_data: dict, guilds_dir: str = 'guilds') -> None:
-        '''
-        Lê as configurações do servidor.
-        '''
-
-        data_path = join(guilds_dir, f'{self._identification}_data.json')
-
-        if exists(data_path):
-            with open(data_path, 'r+', encoding='utf-8') as data_file:
-                data_json = data_file.read()
-
-            self._stored_data = json.loads(data_json)
-        else:
-            self._stored_data = default_data
-
-        self.set_loaded_data(self._stored_data)
-
-        self._bot.log('Guild', f'Data for guild {self._identification} loaded')
 
     def get_main_channel(self) -> discord.TextChannel | None:
         '''
@@ -207,7 +133,15 @@ class Guild():
         '''
 
         self._main_channel_id = main_channel_id
-        self._main_channel = self._bot.get_channel(self._settings['Main channel ID'])  # type: ignore
+        self._main_channel = self._bot.get_channel(self._main_channel_id)  # type: ignore
+
+        query = f'''
+                    UPDATE Guild SET MainTextChannelID = {self._main_channel_id}
+                    WHERE ID = {self._identification};
+                '''
+
+        self.bot.database_controller.cursor.execute(query)
+        self.bot.database_controller.connection.commit()
 
         self._bot.log('Guild', f'The main channel of the guild {self._identification} has been updated')
 
@@ -227,6 +161,14 @@ class Guild():
         '''
 
         self._voice_channel_id = voice_channel_id
-        self._voice_channel = self._bot.get_channel(self._settings['Voice channel ID'])  # type: ignore
+        self._voice_channel = self._bot.get_channel(self._voice_channel_id)  # type: ignore
+
+        query = f'''
+                    UPDATE Guild SET MainVoiceChannelID = {self._voice_channel_id}
+                    WHERE ID = {self._identification};
+                '''
+
+        self.bot.database_controller.cursor.execute(query)
+        self.bot.database_controller.connection.commit()
 
         self._bot.log('Guild', f'The main voice channel of the guild {self._identification} has been updated')

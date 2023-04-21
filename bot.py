@@ -20,8 +20,10 @@ import discord
 from discord.ext import commands, tasks
 from discord.ext.commands import HelpCommand
 
+from discpybotframe.database import DatabaseController
+
 if TYPE_CHECKING:
-    from source.guild import Guild
+    from discpybotframe.guild import Guild
 
 
 class Bot(commands.Bot):
@@ -37,14 +39,16 @@ class Bot(commands.Bot):
     _admins_id: list
     _users: dict
     _custom_guilds: dict
-    _activity_str: str
+    _activities: list[str]
     _custom_ready: bool
+    _database_controller: DatabaseController
 
     def __init__(self,
                  command_prefix: str,
                  help_command: HelpCommand,
                  name: str,
                  settings_file: str,
+                 database_path: str,
                  intents,
                  version: str) -> None:
 
@@ -55,9 +59,10 @@ class Bot(commands.Bot):
         self._custom_guilds = {}
         self._users = {}
         self._admins_id = []
-        self._token = ""
-        self._activity_str = ""
+        self._token = ''
+        self._activities = ['Error']
         self._custom_ready = False
+        self._database_controller = DatabaseController(database_path)
 
         self.log('Bot', f'Initializing {self._name} {self._version}')
         self.log('Bot', 'Initializing the RNG')
@@ -74,15 +79,23 @@ class Bot(commands.Bot):
 
         return self._custom_guilds
 
+    @property
+    def database_controller(self) -> DatabaseController:
+        '''
+        Getter do database controller.
+        '''
+
+        return self._database_controller
+
     # Loops
-    @tasks.loop(seconds=600.0)  # 10 minutos
-    async def save(self) -> None:
+    @tasks.loop(seconds=3600.0)  # 1 hora
+    async def activity(self) -> None:
         '''
         Salva os dados.
         '''
 
-        self.log('Bot', 'Saving all guilds automatically')
-        self.save_all_guilds()
+        self.log('Bot', 'Setting activity automatically')
+        await self.set_activity()
 
     # Eventos
     @commands.Cog.listener()
@@ -93,6 +106,8 @@ class Bot(commands.Bot):
 
         self.log('Bot', 'Ready')
         await self.prepare_data()
+
+        self.activity.start()
 
     @commands.Cog.listener()
     async def on_connect(self) -> None:
@@ -126,14 +141,24 @@ class Bot(commands.Bot):
         '''
 
     @abstractmethod
+    def add_guild(self, guild_id: int) -> None:
+        '''
+        Adiciona um servidor.
+        '''
+
     def load_guilds(self) -> None:
         '''
         Carrega os servidores.
         '''
 
+        self.log('Bot', 'Loading guilds definitions...')
+
+        for guild in self.guilds:
+            self.add_guild(guild.id)
+
     async def prepare_data(self) -> None:
         '''
-        Prepara os dados e a presença.
+        Prepara os dados.
         '''
 
         if not self._custom_ready:
@@ -149,21 +174,18 @@ class Bot(commands.Bot):
         if self.user is not None:
             self.log('Bot', f'{self._name} {self._version} ready to operate')
             self.log('Bot', f'Logged as {self.user.name}, with the id: {self.user.id}')
-
-            await self.set_activity()
         else:
             self.log('Bot', 'Failed to get the user data')
-            await self.set_activity('ERROR')
 
-    async def set_activity(self, activity: str = '') -> None:
+    async def set_activity(self, activity: str = '', status: discord.Status = discord.Status.online) -> None:
         '''
         Define a atividade.
         '''
 
         if activity != '':
-            await self.change_presence(activity=discord.Game(name=activity))
+            await self.change_presence(activity=discord.Game(name=activity), status=status)
         else:
-            await self.change_presence(activity=discord.Game(name=self._activity_str))
+            await self.change_presence(activity=discord.Game(name=choice(self._activities)), status=status)
 
     # Métodos
     def load_internal_settings(self, path: str) -> dict | None:
@@ -198,7 +220,7 @@ class Bot(commands.Bot):
         if internal_settings is not None:
             self._admins_id = list(map(int, internal_settings['ADM_ID']))
             self._token = internal_settings['TOKEN']
-            self._activity_str = choice(internal_settings['Activities'])
+            self._activities = internal_settings['Activities']
         else:
             self.log('Bot', 'Failed set internal definitions')
 
@@ -210,23 +232,6 @@ class Bot(commands.Bot):
         args += (self._token,)  # type: ignore
 
         return super().run(*args, **kwargs)  # type: ignore
-
-    def save_guild(self, guild_id: int) -> None:
-        '''
-        Salva as configurações e dados do servidor específico.
-        '''
-
-        self._custom_guilds[str(guild_id)].write_settings()
-        self._custom_guilds[str(guild_id)].write_data()
-
-    def save_all_guilds(self) -> None:
-        '''
-        Salva as configurações de todos os servidores.
-        '''
-
-        for guild in self._custom_guilds.values():
-            guild.write_settings()
-            guild.write_data()
 
     def is_admin(self, author_id: int) -> bool:
         '''
