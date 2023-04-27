@@ -7,6 +7,7 @@ Módulo Bot System.
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
+import platform
 import json
 
 from abc import abstractmethod
@@ -42,6 +43,7 @@ class Bot(commands.Bot):
     _activities: list[str]
     _custom_ready: bool
     _database_controller: DatabaseController
+    _init_time: datetime
 
     def __init__(self,
                  command_prefix: str,
@@ -50,7 +52,8 @@ class Bot(commands.Bot):
                  settings_file: str,
                  database_path: str,
                  intents,
-                 version: str) -> None:
+                 version: str,
+                 dev_env: bool = False) -> None:
 
         super().__init__(command_prefix=command_prefix, help_command=help_command, intents=intents)
 
@@ -63,12 +66,15 @@ class Bot(commands.Bot):
         self._activities = ['Error']
         self._custom_ready = False
         self._database_controller = DatabaseController(database_path)
+        self._init_time = datetime.now()
 
-        self.log('Bot', f'Initializing {self._name} {self._version}')
+        environment = 'development' if dev_env else 'production'
+
+        self.log('Bot', f'Initializing {self._name} {self._version} with {environment} profile')
         self.log('Bot', 'Initializing the RNG')
 
         seed(time_ns())
-        self.set_internal_settings(settings_file)
+        self.set_internal_settings(settings_file, dev_env)
 
     # Getters e Setters
     @property
@@ -208,7 +214,7 @@ class Bot(commands.Bot):
 
         return None
 
-    def set_internal_settings(self, path: str) -> None:
+    def set_internal_settings(self, path: str, dev_env: bool) -> None:
         '''
         Define as configurações internas.
         '''
@@ -218,9 +224,14 @@ class Bot(commands.Bot):
         internal_settings = self.load_internal_settings(path)
 
         if internal_settings is not None:
-            self._admins_id = list(map(int, internal_settings['ADM_ID']))
-            self._token = internal_settings['TOKEN']
-            self._activities = internal_settings['Activities']
+            self._admins_id = list(map(int, internal_settings['adm_id']))
+
+            if dev_env:
+                self._token = internal_settings['devenv_token']
+            else:
+                self._token = internal_settings['token']
+
+            self._activities = internal_settings['activities']
         else:
             self.log('Bot', 'Failed set internal definitions')
 
@@ -250,7 +261,12 @@ class Bot(commands.Bot):
                 'HTTP loop': self.http,
                 'Latency': self.latency,
                 'Guild count': len(self.guilds),
-                'Voice clients': self.voice_clients}
+                'Voice clients': self.voice_clients,
+                'Uptime': datetime.now() - self._init_time,
+                'Platform': platform.platform(),
+                'Processor': platform.processor(),
+                'Architecture': platform.machine(),
+                'Python version': platform.python_version()}
 
         return info
 

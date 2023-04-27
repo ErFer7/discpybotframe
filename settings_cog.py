@@ -29,8 +29,12 @@ class SettingsCog(Cog):
 
         self.bot.log('SettingsCog', f'<channel_update> (Author: {ctx.author.name}')
 
-        if len(ctx.message.channel_mentions) != 1:
-            await DiscordUtilities.send_error_message(ctx, 'Mencione um canal com #canal!', 'channel')
+        require_guild = (True, 'Este comando só pode ser usado em servidores', 'channel')
+        require_text_channel = (True, 'Mencione um canal com #canal!', 'channel')
+
+        if not await self.validate_command(ctx,
+                                           require_guild=require_guild,
+                                           require_text_channel=require_text_channel):
             return
 
         self._bot.get_custom_guild(ctx.guild.id).update_main_channel(ctx.message.channel_mentions[0].id)
@@ -48,31 +52,24 @@ class SettingsCog(Cog):
 
         self.bot.log('SettingsCog', f'<voice_channel_update> (Author: {ctx.author.name}')
 
-        if args is None:
-            await DiscordUtilities.send_error_message(ctx, 'Erro crítico nos argumentos!', 'voice_channel')
-            return
+        require_guild = (True, 'Este comando só pode ser usado em servidores', 'voice_channel')
+        require_voice_channel = (True, 'Especifique o nome do canal de voz!', 'voice_channel')
+        require_args = (1, 'Especifique o nome do canal de voz!', 'voice_channel')
 
-        if len(args) != 1:
-            await DiscordUtilities.send_error_message(ctx, 'Especifique o nome do canal de voz!', 'voice_channel')
+        if not await self.validate_command(ctx,
+                                           args=args,
+                                           require_guild=require_guild,
+                                           require_voice_channel=require_voice_channel,
+                                           require_args=require_args):
             return
-
-        channel_found = False
 
         guild = ctx.guild
-
-        if guild is None:
-            await DiscordUtilities.send_error_message(ctx, 'Não há canais de voz aqui', 'voice_channel')
-            return
 
         for channel in guild.voice_channels:
             if channel.name == args[0]:
                 self._bot.get_custom_guild(ctx.guild.id).update_voice_channel(channel.id)
-                channel_found = True
 
-        if channel_found:
-            await DiscordUtilities.send_message(ctx,
-                                                'Canal de voz redefinido',
-                                                f'Novo canal de voz: {args[0]}',
-                                                'voice_channel')
-        else:
-            await DiscordUtilities.send_error_message(ctx, 'Canal não encontrado!', 'voice_channel')
+        await DiscordUtilities.send_message(ctx,
+                                            'Canal de voz redefinido',
+                                            f'Novo canal de voz: {args[0]}',
+                                            'voice_channel')

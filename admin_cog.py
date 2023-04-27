@@ -33,8 +33,9 @@ class AdminCog(Cog):
 
         self.bot.log('AdminCog', f'<off> (Author: {ctx.author.name})')
 
-        if not self._bot.is_admin(ctx.author.id):
-            await DiscordUtilities.send_error_message(ctx, 'Você não tem permissão para usar este comando', 'shutdown')
+        require_adm = (True, 'Você não tem permissão para usar este comando', 'shutdown')
+
+        if not await self.validate_command(ctx, require_adm=require_adm):
             return
 
         # Envia uma mensagem de saída
@@ -54,14 +55,9 @@ class AdminCog(Cog):
 
         bot_info = self.bot.get_info()
 
-        description = f'''⬩ **{bot_info['Name']} {bot_info['Version']}** - Criada em 2022-03-09
+        description = ''
 
-                          ⬩ **Loop HTTP:** {bot_info['HTTP loop']}
-
-                          ⬩ **Latência interna:** {bot_info['Latency']} ms
-
-                          ⬩ **Servidores conectados:** {bot_info['Guild count']}
-
-                          ⬩ **Instâncias de voz:** {bot_info['Voice clients']}'''
+        for key in bot_info:
+            description += f'⬩ **{key}**: {bot_info[key]}\n'
 
         await DiscordUtilities.send_message(ctx, 'Informações', description, 'info')
