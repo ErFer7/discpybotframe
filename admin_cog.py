@@ -8,6 +8,7 @@ from discord.ext import commands
 
 from discpybotframe.cog import Cog
 from discpybotframe.utilities import DiscordUtilities
+from discpybotframe.validation import Validator
 
 
 class AdminCog(Cog):
@@ -33,9 +34,10 @@ class AdminCog(Cog):
 
         self.bot.log('AdminCog', f'<off> (Author: {ctx.author.name})')
 
-        require_adm = (True, 'Você não tem permissão para usar este comando', 'shutdown')
+        validator = Validator(self.bot, ctx, 'shutdown', 'Permissão de administrador necessária')
+        validator.require_conditions(adm=True)
 
-        if not await self.validate_command(ctx, require_adm=require_adm):
+        if not await validator.validate_command():
             return
 
         # Envia uma mensagem de saída
