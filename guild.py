@@ -32,15 +32,6 @@ class Guild():
         self._bot = bot
         self._guild = self._bot.get_guild(self._identification) # type: ignore
 
-        # Insere a guild no banco de dados se ela não existir
-        query = f'''
-                    INSERT OR IGNORE INTO Guild (ID)
-                    VALUES ({self._identification});
-                 '''
-
-        self.bot.database_controller.cursor.execute(query)
-        self.bot.database_controller.connection.commit()
-
         self.load_settings()
         self.load_data()
 
@@ -63,15 +54,60 @@ class Guild():
 
         return self._guild
 
+    def load(self) -> None:
+        '''
+        Carrega informações na ordem correta.
+        '''
+
+        self.load_settings()
+        self.load_data()
+
+    def remove(self) -> None:
+        '''
+        Remove informações na ordem correta.
+        '''
+
+        self.remove_data()
+        self.remove_settings()
+
     # Métodos
-    @abstractmethod
     def load_settings(self) -> None:
         '''
         Lê as configurações do servidor.
         '''
 
+        if self.bot.database_controller is not None:
+            query = f'''
+                        INSERT OR IGNORE INTO Guild (ID)
+                        VALUES ({self._identification});
+                    '''
+
+            self.bot.database_controller.cursor.execute(query)
+            self.bot.database_controller.connection.commit()
+
     @abstractmethod
     def load_data(self) -> None:
         '''
         Lê os dados do servidor.
+        '''
+
+    def remove_settings(self) -> None:
+        '''
+        Remove as configurações do servidor.
+        '''
+
+        if self.bot.database_controller is not None:
+            query = f'''
+                        DELETE FROM Guild
+                        WHERE ID = {self._identification};
+                    '''
+
+            self.bot.database_controller.cursor.execute(query)
+            self.bot.database_controller.connection.commit()
+
+
+    @abstractmethod
+    def remove_data(self) -> None:
+        '''
+        Remove os dados do servidor.
         '''

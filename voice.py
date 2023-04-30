@@ -31,6 +31,7 @@ class VoiceController():
         Toca um áudio.
         '''
 
+        return
         voice_client: discord.VoiceClient | None = None
 
         if len(self._bot.voice_clients) > 0:

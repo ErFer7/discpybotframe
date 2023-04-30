@@ -42,7 +42,7 @@ class Bot(commands.Bot):
     _custom_guilds: dict
     _activities: list[str]
     _custom_ready: bool
-    _database_controller: DatabaseController
+    _database_controller: DatabaseController | None
     _init_time: datetime
 
     def __init__(self,
@@ -50,9 +50,9 @@ class Bot(commands.Bot):
                  help_command: HelpCommand,
                  name: str,
                  settings_file: str,
-                 database_path: str,
                  intents,
                  version: str,
+                 database_path: str = '',
                  dev_env: bool = False) -> None:
 
         super().__init__(command_prefix=command_prefix, help_command=help_command, intents=intents)
@@ -65,8 +65,11 @@ class Bot(commands.Bot):
         self._token = ''
         self._activities = ['Error']
         self._custom_ready = False
-        self._database_controller = DatabaseController(database_path)
+        self._database_controller = None
         self._init_time = datetime.now()
+
+        if database_path != '':
+            self._database_controller = DatabaseController(database_path)
 
         environment = 'development' if dev_env else 'production'
 
@@ -86,7 +89,7 @@ class Bot(commands.Bot):
         return self._custom_guilds
 
     @property
-    def database_controller(self) -> DatabaseController:
+    def database_controller(self) -> DatabaseController | None:
         '''
         Getter do database controller.
         '''
@@ -139,6 +142,24 @@ class Bot(commands.Bot):
 
         self.log('Bot', 'Resumed')
 
+    @commands.Cog.listener()
+    async def on_guild_join(self, guild) -> None:
+        '''
+        Evento para a entrada em um servidor.
+        '''
+
+        self.add_guild(guild.id)
+        self.log('Bot', f'Joined guild {guild.name}.')
+
+    @commands.Cog.listener()
+    async def on_guild_remove(self, guild) -> None:
+        '''
+        Evento para a saída de um servidor.
+        '''
+
+        self.remove_guild(guild.id)
+        self.log('Bot', f'Left guild {guild.name}.')
+
     # Métodos
     @abstractmethod
     async def setup_hook(self) -> None:
@@ -150,6 +171,12 @@ class Bot(commands.Bot):
     def add_guild(self, guild_id: int) -> None:
         '''
         Adiciona um servidor.
+        '''
+
+    @abstractmethod
+    def remove_guild(self, guild_id: int) -> None:
+        '''
+        Remove um servidor.
         '''
 
     def load_guilds(self) -> None:
