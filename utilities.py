@@ -47,7 +47,11 @@ class DiscordUtilities():
                                   color=color)
 
         embed.set_footer(text=f'{footer}')
-        await ctx.send(embed=embed)
+
+        if len(embed) <= 4096:
+            await ctx.send(embed=embed)
+        else:
+            await DiscordUtilities.send_error_message(ctx, 'A mensagem gerada pelo comando é muito grande', '')
 
     @staticmethod
     async def send_error_message(ctx, description: str, footer: str) -> None:
@@ -58,9 +62,9 @@ class DiscordUtilities():
         prefix = '❌ '
         color = discord.Color.red()
         embed = discord.Embed(title=f'{prefix} **Erro**',
-                                  type='rich',
-                                  description=description,
-                                  color=color)
+                              type='rich',
+                              description=description,
+                              color=color)
 
         embed.set_footer(text=f'{footer}')
         await ctx.send(embed=embed)

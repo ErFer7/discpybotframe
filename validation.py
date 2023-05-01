@@ -7,6 +7,7 @@ Módulo para a validação
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
+from sys import maxsize
 from enum import Enum
 
 from discord.ext import commands
@@ -51,32 +52,33 @@ class ArgumentFormat():
         Valida o argumento.
         '''
 
-        if self._type == ArgumentType.STRING and self._length_range is not None:
-            if len(arg) < self._length_range[0] or len(arg) > self._length_range[1]:
-                return False
-        elif self._type == ArgumentType.INTEGER:
+        match self._type:
+            case ArgumentType.STRING:
+                if self._length_range is not None:
+                    if len(arg) < self._length_range[0] or len(arg) > self._length_range[1]:
+                        return False
+            case ArgumentType.INTEGER:
+                arg_num = None
 
-            arg_num = None
-
-            try:
-                arg_num = int(arg)
-            except ValueError:
-                return False
-
-            if self._range is not None:
-                if arg_num < self._range[0] or arg_num > self._range[1]:
+                try:
+                    arg_num = int(arg)
+                except ValueError:
                     return False
-        elif self._type == ArgumentType.FLOAT:
-            arg_num = None
 
-            try:
-                arg_num = float(arg)
-            except ValueError:
-                return False
+                if self._range is not None:
+                    if arg_num < self._range[0] or arg_num > self._range[1]:
+                        return False
+            case ArgumentType.FLOAT:
+                arg_num = None
 
-            if self._range is not None:
-                if arg_num < self._range[0] or arg_num > self._range[1]:
+                try:
+                    arg_num = float(arg)
+                except ValueError:
                     return False
+
+                if self._range is not None:
+                    if arg_num < self._range[0] or arg_num > self._range[1]:
+                        return False
 
         return True
 
@@ -95,6 +97,8 @@ class Validator():
     _require_adm: bool
     _require_guild: bool
     _arg_format: tuple[ArgumentFormat] | tuple
+    _exact_format: bool
+    _range: tuple[int, int]
 
     def __init__(self,
                  bot: Bot,
@@ -110,6 +114,8 @@ class Validator():
         self._require_adm = False
         self._require_guild = False
         self._arg_format = ()
+        self._exact_format = True
+        self._range = (0, maxsize)
 
     @property
     def bot(self) -> Bot:
@@ -161,12 +167,17 @@ class Validator():
         self._require_adm = adm
         self._require_guild = guild
 
-    def require_arg_format(self, arg_format: tuple[ArgumentFormat] | tuple) -> None:
+    def require_arg_format(self,
+                           arg_format: tuple[ArgumentFormat] | tuple,
+                           exact: bool = True,
+                           range_: tuple[int, int] = (0, maxsize)) -> None:
         '''
         Define o formato dos argumentos.
         '''
 
         self._arg_format = arg_format
+        self._exact_format = exact
+        self._range = range_
 
     async def validate_command(self) -> bool:
         '''
@@ -181,13 +192,21 @@ class Validator():
             await DiscordUtilities.send_error_message(self._ctx, self._error_message, self._footer)
             return False
 
-        if len(self._arg_format) != len(self._args):
+        arg_size_exact_check = self._exact_format and len(self._arg_format) != len(self._args)
+        arg_size_loose_check = len(self._args) < self._range[0] or len(self._args) > self._range[1]
+
+        if arg_size_exact_check or arg_size_loose_check:
             await DiscordUtilities.send_error_message(self._ctx, self._error_message, self._footer)
             return False
 
-        for i, arg in enumerate(self._arg_format):
-            if not arg.validate(self._args[i]):
-                await DiscordUtilities.send_error_message(self._ctx, self._error_message, self._footer)
-                return False
+        for i, arg in enumerate(self._args):
+            if self._exact_format:
+                if not self._arg_format[i].validate(arg):
+                    await DiscordUtilities.send_error_message(self._ctx, self._error_message, self._footer)
+                    return False
+            else:
+                if not self._arg_format[0].validate(arg):
+                    await DiscordUtilities.send_error_message(self._ctx, self._error_message, self._footer)
+                    return False
 
         return True
