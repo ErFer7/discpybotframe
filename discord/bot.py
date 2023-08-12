@@ -21,10 +21,10 @@ import discord
 from discord.ext import commands, tasks
 from discord.ext.commands import HelpCommand
 
-from discpybotframe.database import DatabaseController
+from discpybotframe.internals.database import DatabaseController
 
 if TYPE_CHECKING:
-    from discpybotframe.guild import Guild
+    from discpybotframe.discord.guild import Guild
 
 
 class Bot(commands.Bot):

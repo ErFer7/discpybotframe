@@ -12,7 +12,7 @@ from abc import abstractmethod
 import discord
 
 if TYPE_CHECKING:
-    from discpybotframe.bot import Bot
+    from discpybotframe.discord.bot import Bot
 
 
 class Guild():

@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 import discord
 
 if TYPE_CHECKING:
-    from discpybotframe.bot import Bot
+    from discpybotframe.discord.bot import Bot
 
 
 class VoiceController():

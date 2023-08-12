@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 from discord.ext import commands
 
 if TYPE_CHECKING:
-    from discpybotframe.bot import Bot
+    from discpybotframe.discord.bot import Bot
 
 
 class Cog(commands.Cog):

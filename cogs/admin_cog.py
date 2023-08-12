@@ -6,9 +6,9 @@ Módulo para a cog dos comandos de administrador.
 
 from discord.ext import commands
 
-from discpybotframe.cog import Cog
-from discpybotframe.utilities import DiscordUtilities
-from discpybotframe.validation import Validator
+from discpybotframe.cogs.cog import Cog
+from discpybotframe.utils.utilities import DiscordUtilities
+from discpybotframe.validation.admin_cog_validator import AdminCogValidator
 
 
 class AdminCog(Cog):
@@ -34,10 +34,10 @@ class AdminCog(Cog):
 
         self.bot.log('AdminCog', f'<off> (Author: {ctx.author.name})')
 
-        validator = Validator(self.bot, ctx, 'shutdown', 'Permissão de administrador necessária')
-        validator.require_conditions(adm=True)
-
-        if not await validator.validate_command():
+        if not await AdminCogValidator.shutdown_validation(ctx,
+                                                           self.bot,
+                                                           'Permissão de administrador necessária',
+                                                           'shutdown'):
             return
 
         # Envia uma mensagem de saída

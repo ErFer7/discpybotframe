@@ -6,8 +6,8 @@ Módulo para a cog dos comandos de ajuda
 
 from discord.ext import commands
 
-from discpybotframe.utilities import DiscordUtilities
-from discpybotframe.cog import Cog
+from discpybotframe.utils.utilities import DiscordUtilities
+from discpybotframe.cogs.cog import Cog
 
 
 class HelpCog(Cog):
